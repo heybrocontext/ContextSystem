@@ -1,13 +1,13 @@
-# Agent Entrypoint (AGENTS.md)
+# エージェント入口（AGENTS.md）
 
-Authoritative instruction file for this repository is `CONTEXTSYSTEM_SPEC.md`.
+このリポジトリの**仕様本文（正本）**は `CONTEXTSYSTEM_SPEC.md` である。
 
-Read it in full before any action in this repository. Do not proceed using only this file.
+このリポジトリでいかなる作業をする前に、**同ファイルを全文読むこと**。本ファイルだけを根拠に作業を続けてはならない。
 
-Required steps:
+手順：
 
-1. Open `./CONTEXTSYSTEM_SPEC.md`.
-2. Follow every directive written there.
-3. If this file and `CONTEXTSYSTEM_SPEC.md` appear to conflict, `CONTEXTSYSTEM_SPEC.md` wins.
+1. `./CONTEXTSYSTEM_SPEC.md` を開く。
+2. そこに書かれた指示に従う。
+3. 本ファイルと `CONTEXTSYSTEM_SPEC.md` が矛盾する場合は、`CONTEXTSYSTEM_SPEC.md` を優先する。
 
-This file contains no other instructions.
+上記以外の指示は本ファイルには書かない。
