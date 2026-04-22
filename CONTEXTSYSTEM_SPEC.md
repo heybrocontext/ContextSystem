@@ -2,19 +2,21 @@
 
 このファイルが**仕様本文の唯一の正本**である。可否・手順・結果・スコープ一覧・更新規則は**すべてここ**に書く。他のファイル（`AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`）は、この本文に到達させるためのツール別エントリポイントであり、**本文は持たない**。
 
-## 1. エージェント別エントリポイント（いつ・どの確度で読まれるか）
+## 1. エージェント別エントリポイント（参照タイミング早見）
 
-各 AI エージェントの自動読込仕様は公式ドキュメントで異なる。下表は**本リポジトリに置いた3つの入口ファイル**（`AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`）が**どのエージェントで・いつ・どれくらい確実に読まれるか**を、公式ドキュメントに基づいて整理したものである。どの経路から来ても**最終的に本ファイル（`CONTEXTSYSTEM_SPEC.md`）を必ず開く**ように、各入口ファイルはその指示だけを含む。
+◯＝公式説明が主に該当／×＝主に非該当または対象外／—＝タイミング列では**未確認**（◯×どちらとも言い切れない）。最終列は**未確認・要追跡**。
 
-| エージェント／実行形態 | 読まれる入口ファイル | いつ読まれるか | 確度（公式仕様の要約） | 出典 |
-|------------------------|----------------------|----------------|------------------------|------|
-| **OpenAI Codex**（コマンドライン／TUI／`codex exec`） | `./AGENTS.md`（`AGENTS.override.md` があればそちらを優先） | 実行のたびに1回（TUI は起動のたび）。プロジェクトルートから現在の作業ディレクトリへ向かって走査し、内容を連結。合計 32 KiB を超えた分は打ち切り | **ルートの `AGENTS.md` が空でなければ必ず読み込む**（空・サイズ上限で打ち切りのときを除く） | [^codex] |
-| **Cursor**（エージェント／チャット、ルートの `AGENTS.md`） | `./AGENTS.md` | エージェント／チャットのセッション開始時にモデル用コンテキストの先頭へ挿入。サブディレクトリ内で作業すると、より深い階層の `AGENTS.md` が優先される | **`.cursor/rules` の代わりとして読み込む**。タブ補完やインライン編集（コマンド＋K 等）には適用されない | [^cursor] |
-| **GitHub Copilot コーディングエージェント**（GitHub.com／VS Code／JetBrains／Xcode／Eclipse） | `.github/copilot-instructions.md` と `./AGENTS.md`（`CLAUDE.md` も可） | エージェント実行のたびに対象リポジトリの指示を読む。ディレクトリツリーで最も近い `AGENTS.md` が優先される | **リポジトリ全体の指示とエージェント用指示の両方に対応** | [^copilot-support][^copilot-repo] |
-| **GitHub Copilot コードレビュー** | `.github/copilot-instructions.md` のみ | プルリクエストのレビュー時。ベースブランチ側のファイルを使う | `AGENTS.md` と `CLAUDE.md` は**使わない**（`.github/copilot-instructions.md` と `.github/instructions/**` のみ） | [^copilot-support] |
-| **GitHub Copilot チャット（IDE）** | 全 IDE: `.github/copilot-instructions.md`／VS Code のみ: `AGENTS.md` | チャット送信時に自動で付与される | VS Code ではエージェント用指示も読む。Visual Studio／JetBrains／Xcode／Eclipse のチャットでは `AGENTS.md` は対象外 | [^copilot-support] |
-| **GitHub Copilot CLI** | `.github/copilot-instructions.md` と `./AGENTS.md` | CLI 実行のたび | 両方に対応 | [^copilot-support] |
-| **Claude Code**（コマンドライン／IDE 拡張） | `./CLAUDE.md`（または `./.claude/CLAUDE.md`）。本リポジトリでは `CLAUDE.md` の先頭で `@AGENTS.md` を取り込む | セッション開始時に、作業ディレクトリから上方向へ走査し、見つかった `CLAUDE.md` を**全文**読み込む（`CLAUDE.local.md` も続けて読む） | **`AGENTS.md` は自動では読まない**。`@AGENTS.md` による取り込み経由でのみ到達する | [^claude] |
+| AIエージェント | コンテキストの入り口 | セッション開始時のみ入り口ファイル参照 | ユーザープロンプト毎に入り口内ファイル参照 | 参照タイミング不明（調査不足） |
+|----------------|----------------------|------------------------------------------|----------------------------------------|------------------------------|
+| OpenAI Codex（CLI／TUI／`codex exec`） | `AGENTS.md`（各階層の `AGENTS.override.md` 優先。グローバルは `~/.codex`） | ◯（**1 回の実行あたり 1 回**に指示チェーンを構築と公式） | × | 同一実行の途中でユーザー発話が分かれたときに**再構築するか**は未確認 |
+| Cursor（エージェント／チャット） | `AGENTS.md`、`.cursor/rules/**` | ◯（会話開始時にモデル用コンテキストへ反映する説明） | × | **各ユーザーメッセージごとに**入口ファイルをディスクから読み直すかは公式に未確認 |
+| GitHub Copilot チャット（リポジトリ文脈） | `.github/copilot-instructions.md`、（VS Code のみ）`AGENTS.md` | × | ◯（**Copilot へ送るリクエストに指示が付く**旨の記載） | 機能・IDE・設定の組合せで付かない経路の有無は未整理 |
+| GitHub Copilot コーディングエージェント | `.github/copilot-instructions.md`、`AGENTS.md`（`CLAUDE.md` 等も可） | × | × | **エージェント実行の内部ステップごと**に再読込するかは未調査 |
+| GitHub Copilot コードレビュー | `.github/copilot-instructions.md`、`.github/instructions/**` | × | × | **レビュー 1 回の内部**で何回読むか／差分取得タイミングは未調査（`AGENTS.md` は対象外） |
+| GitHub Copilot CLI | `.github/copilot-instructions.md`、`AGENTS.md` | — | — | **起動単位かコマンド単位か**、公式のタイミング記述をこれ以上掘っていない |
+| Claude Code | `CLAUDE.md`（本リポジトリは `@AGENTS.md` で `AGENTS.md` を取り込み） | ◯（起動時に走査して読み込むのが主） | × | **`/compact` 後の再注入**、`@import` の再評価、サブツリー遅延読込の境界は要整理 |
+
+**出典（一次）**: [^codex] [^cursor] [^copilot-support] [^copilot-repo] [^claude]
 
 [^codex]: OpenAI Codex「AGENTS.md によるカスタム指示」https://developers.openai.com/codex/guides/agents-md/
 [^cursor]: Cursor ドキュメント「ルール — AGENTS.md／よくある質問」https://cursor.com/docs/context/rules
