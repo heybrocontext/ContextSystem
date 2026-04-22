@@ -8,6 +8,7 @@
 - **AI エージェント用の入口**: 各エージェントが自動で読むファイルを公式仕様に合わせて置き、**いずれも `CONTEXTSYSTEM_SPEC.md` に誘導する**（本文の二重記述はしない）。
   - `AGENTS.md` — OpenAI Codex CLI / Cursor / GitHub Copilot 系で参照される想定
   - `CLAUDE.md` — Claude Code 用（先頭の `@AGENTS.md` は Claude Code の取り込み構文）
+  - `GEMINI.md` — GitHub がエージェント指示の代替として列挙するルート `GEMINI.md` 用（`AGENTS.md` と同文の薄い入口）
   - `.github/copilot-instructions.md` — GitHub Copilot のリポジトリ全体指示としての別経路
 - **この README**: 人間向けの概要。
 
