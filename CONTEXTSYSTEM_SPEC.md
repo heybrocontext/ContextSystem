@@ -12,13 +12,13 @@
 |-----------------------------|--------------------------------------|----------------------------------------|
 | OpenAI Codex（CLI／TUI／`codex exec`） | `~/.codex` の `AGENTS.override.md` または `AGENTS.md` → リポジトリの Git ルートから **現在の作業ディレクトリまで**各階層の `AGENTS.override.md` / `AGENTS.md`（`project_doc_fallback_filenames` があればその名も）を連結 | **1 回の実行の開始時に 1 回**指示チェーンを構築（TUI は通常「起動のたび」）。合計 **32 KiB** を超えた分は付与されない |
 | Cursor（エージェント／チャット） | ルートおよびサブディレクトリの **`AGENTS.md`**、**`.cursor/rules/`** 以下の Project Rules（`.md` / `.mdc`） | ルールが**適用される**とき、その内容は**モデル用コンテキストの先頭**に入る。LLM は **completion 間で記憶を保持しない**（公式の前提） |
-| GitHub Copilot チャット（リポジトリ文脈） | **`.github/copilot-instructions.md`**（対応表に載る IDE／Web）。**`AGENTS.md` は VS Code のチャットに限り**対応表に明示 | リポジトリのカスタム指示は、**Copilot へ送信するリクエストに自動で付与**される旨（保存直後から利用可能、などの記述はリポジトリ手順側） |
-| GitHub Copilot コーディングエージェント | **`.github/copilot-instructions.md`** と、ツリー内の **`AGENTS.md` / `CLAUDE.md` / `GEMINI.md`**（**最も近い**ファイルが優先、とリポジトリ手順の説明） | **エージェントがリポジトリで作業するとき**に読み込まれる（対応表でファイル種を固定） |
-| GitHub Copilot コードレビュー | **`.github/copilot-instructions.md`**、**`.github/instructions/**/*.instructions.md`** | **プルリクエストのレビュー時**。**ベースブランチ**側の指示を使う。`AGENTS.md` / `CLAUDE.md` は**対象外**（対応表） |
-| GitHub Copilot CLI | **`.github/copilot-instructions.md`**、**`AGENTS.md`**（対応表） | 対応表は**ファイル種**まで。**いつプロセスが再読込するか**の細目はこの表では断定しない（要: CLI 専用ドキュメント） |
-| Claude Code | **`./CLAUDE.md`** または **`./.claude/CLAUDE.md`**、走査で見つかる **`CLAUDE.local.md`**、**`@…` による取り込み**（本リポジトリは `@AGENTS.md`） | **各セッション開始時**に、走査で見つかった `CLAUDE.md` 系を読み込む。**`/compact` 後**にルート `CLAUDE.md` を再注入する旨が公式にある |
+| GitHub Copilot チャット（リポジトリ文脈） | **`.github/copilot-instructions.md`**（対応表に載る IDE／GitHub.com）。**`AGENTS.md` は VS Code のチャットに限り**対応表に明示 | **保存直後**から利用可能。**Copilot へ送信した要求**に指示が**自動で追加**される（[^copilot-repo]「使用中のカスタム手順」）。GitHub.com のチャットでは指示ファイルを**添付したリポジトリ**を会話に含める操作が文書化されている（同節） |
+| GitHub Copilot コーディングエージェント | **`.github/copilot-instructions.md`** と、ツリー内の **`AGENTS.md` / `CLAUDE.md` / `GEMINI.md`**（**Copilot が動作しているとき**、ツリーで**最も近い** `AGENTS.md` が優先、と[^copilot-repo]） | 上記ファイル種は対応表で固定。**エージェント実行の内部で何回ディスクを開き直すか**は GitHub Docs の当該ページでは数えず、実装に委ねる |
+| GitHub Copilot コードレビュー | **`.github/copilot-instructions.md`**、**`.github/instructions/**/*.instructions.md`** | **プルリクエストのレビュー時**。**ベースブランチ**側のカスタム指示を使う（[^copilot-repo] の注記）。`AGENTS.md` / `CLAUDE.md` は**対象外**（[^copilot-support]） |
+| GitHub Copilot CLI | **`.github/copilot-instructions.md`**、**`AGENTS.md`**（リポジトリ**ルート**／**現在の作業ディレクトリ**／`COPILOT_CUSTOM_INSTRUCTIONS_DIRS` の各ディレクトリ。ルートに **`AGENTS.md` と `copilot-instructions.md` が両方**あれば**両方使用**、と[^copilot-cli]） | **保存直後**から利用可能。**Copilot へ送信した要求**に指示を**自動追加**。CLI セッション中に指示を変更した場合は、**次にプロンプトを送信するとき**（現在または将来のセッション）に反映（[^copilot-cli]「使用中のカスタム手順」） |
+| Claude Code | **`./CLAUDE.md`** または **`./.claude/CLAUDE.md`**、走査で見つかる **`CLAUDE.local.md`**、**`@…` による取り込み**（本リポジトリは `@AGENTS.md`） | **各セッション開始時**に、走査で見つかった `CLAUDE.md` 系を読み込む。**`/compact` の後**、ルートの `CLAUDE.md` は**ディスクから再読み込みされセッションへ再注入**される（[^claude]）。サブディレクトリの `CLAUDE.md` は**該当ディレクトリのファイルを読むまで**自動再注入されない（同節） |
 
-**出典**: [^codex] [^cursor] [^copilot-support] [^copilot-repo] [^claude]
+**出典**: [^codex] [^cursor] [^copilot-support] [^copilot-repo] [^copilot-cli] [^claude]
 
 ### 1.2 YES／NO 早見（列定義）
 
@@ -29,19 +29,21 @@
 
 | AIエージェント | コンテキストの入り口 | セッション開始時のみ入り口ファイル参照 | ユーザープロンプト毎に入り口内ファイル参照 | 参照タイミング不明（調査不足） |
 |----------------|----------------------|------------------------------------------|----------------------------------------|------------------------------|
-| OpenAI Codex（CLI／TUI／`codex exec`） | `AGENTS.md`（各階層の `AGENTS.override.md` 優先。グローバルは `~/.codex`） | はい | いいえ | 公式は「**1 run につき開始時に指示チェーンを構築**」と明記。run 内の対話で**ファイルを再走査するか**まではこの表では断定しない |
-| Cursor（エージェント／チャット） | `AGENTS.md`、`.cursor/rules/**` | いいえ | はい | 公式は「**各 completion のモデル用コンテキスト先頭にルール内容が入る**」旨。セッション全体で**初回だけ**とは書いていない。`AGENTS.md` も Project Rules の代替として同列に扱う説明（実装の細部は製品版に依存） |
-| GitHub Copilot チャット（リポジトリ文脈） | `.github/copilot-instructions.md`、（VS Code のみ）`AGENTS.md` | いいえ | はい | GitHub Docs は「**Copilot へ送信するリクエストに指示が付く**」趣旨。IDE・機能・設定で付かない経路の整理は未了 |
-| GitHub Copilot コーディングエージェント | `.github/copilot-instructions.md`、`AGENTS.md`（`CLAUDE.md` / `GEMINI.md` も可） | いいえ | いいえ | チャットの「1 メッセージ」とは別単位。**エージェント実行の内部で何回読むか**は未調査 |
-| GitHub Copilot コードレビュー | `.github/copilot-instructions.md`、`.github/instructions/**` | いいえ | いいえ | 対象は PR レビュー。**ユーザー IDE プロンプト**とは別。レビュー 1 回の内部の再読込回数は未調査（`AGENTS.md` は対象外） |
-| GitHub Copilot CLI | `.github/copilot-instructions.md`、`AGENTS.md` | いいえ | いいえ | 公式はファイル種の対応が中心で、**CLI プロセスの何イベントで読むか**はこの表では追跡していない |
-| Claude Code | `CLAUDE.md`（本リポジトリは `@AGENTS.md` で `AGENTS.md` を取り込み） | いいえ | いいえ | 起動時読込が主だが、**`/compact` 後にルート `CLAUDE.md` を再注入**する等、「開始時のみ」とは言えない。各ユーザーターンで全文をディスクから読み直すとも書いていない |
+| OpenAI Codex（CLI／TUI／`codex exec`） | `AGENTS.md`（各階層の `AGENTS.override.md` 優先。グローバルは `~/.codex`） | はい | いいえ | 公式は「**1 run につき開始時に 1 回**指示チェーンを構築」と明記（[^codex]）。**同一 run 内のユーザー発話のたびにディスクを再走査する**ことは**記載なし**（未記載＝この列では「いいえ」扱い） |
+| Cursor（エージェント／チャット） | `AGENTS.md`、`.cursor/rules/**` | いいえ | はい | ルールは**適用時**に**モデル用コンテキスト先頭**へ入る旨（[^cursor]）。`AGENTS.md` は **Project Rules の代替**として同ページで説明。**各 completion ごとにモデルは記憶を保持しない**前提が同ページに明記 |
+| GitHub Copilot チャット（リポジトリ文脈） | `.github/copilot-instructions.md`、（VS Code のみ）`AGENTS.md` | いいえ | はい | **送信した要求**へ指示が**自動追加**（[^copilot-repo]）。IDE 対応差は[^copilot-support] の対応表に従う |
+| GitHub Copilot コーディングエージェント | `.github/copilot-instructions.md`、`AGENTS.md`（`CLAUDE.md` / `GEMINI.md` も可） | いいえ | いいえ | トリガーは**エージェントがリポジトリで動くこと**（[^copilot-repo]）。**チャットの 1 メッセージ＝1 要求**とは限らない |
+| GitHub Copilot コードレビュー | `.github/copilot-instructions.md`、`.github/instructions/**` | いいえ | いいえ | **PR レビュー時**にベースブランチの指示を使う（[^copilot-repo]）。**IDE のユーザー毎プロンプト**とは別トリガー |
+| GitHub Copilot CLI | `.github/copilot-instructions.md`、`AGENTS.md` | いいえ | はい | **送信した要求**へ自動追加、変更は**次のプロンプト送信**から反映（[^copilot-cli]）。**実装とドキュメントの差**を報告する Issue があるため、挙動検証はログ確認を推奨（[^copilot-cli-issue]） |
+| Claude Code | `CLAUDE.md`（本リポジトリは `@AGENTS.md` で `AGENTS.md` を取り込み） | いいえ | いいえ | **`/compact` 後にルート `CLAUDE.md` を再注入**するため列3「のみ」は**いいえ**。列4 も**全文を毎プロンプトでディスク再読込**とは書かれないため**いいえ**（[^claude]） |
 
 [^codex]: OpenAI Codex「AGENTS.md によるカスタム指示」https://developers.openai.com/codex/guides/agents-md/
 [^cursor]: Cursor ドキュメント「ルール — AGENTS.md／よくある質問」https://cursor.com/docs/context/rules
 [^copilot-support]: GitHub ドキュメント「カスタム指示の種類ごとの対応環境」https://docs.github.com/ja/copilot/reference/custom-instructions-support
-[^copilot-repo]: GitHub ドキュメント「GitHub Copilot 用のリポジトリ カスタム命令の追加」https://docs.github.com/ja/copilot/how-tos/configure-custom-instructions/add-repository-instructions
-[^claude]: Anthropic「Claude がプロジェクトを覚える仕組み（CLAUDE.md／AGENTS.md）」https://docs.anthropic.com/ja/docs/claude-code/memory
+[^copilot-repo]: GitHub ドキュメント「GitHub Copilot 用のリポジトリ カスタム命令の追加」https://docs.github.com/ja/copilot/how-tos/configure-custom-instructions/add-repository-instructions（特に「使用中のカスタム手順」およびエージェント指示・コードレビュー注記）
+[^copilot-cli]: GitHub ドキュメント「GitHub Copilot CLI にカスタム指示を追加する」https://docs.github.com/ja/copilot/how-tos/copilot-cli/add-custom-instructions（特に「使用中のカスタム手順」「エージェントの指示」）
+[^copilot-cli-issue]: Copilot CLI リポジトリ Issue（例: カスタム指示の自動取り込みに関する報告）https://github.com/github/copilot-cli/issues/713
+[^claude]: Anthropic「Claude がプロジェクトを覚える仕組み（CLAUDE.md／AGENTS.md）」https://docs.anthropic.com/ja/docs/claude-code/memory（`/compact` 後のルート `CLAUDE.md` 再注入は同ドキュメントのトラブルシュート）
 
 **共通前提（すべてのエージェント）**
 
