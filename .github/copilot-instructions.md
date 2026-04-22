@@ -1,10 +1,13 @@
-# ContextSystem — GitHub Copilot 入口
+# Agent Entrypoint (copilot-instructions.md)
 
-このリポジトリの仕様本文は **`CONTEXTSYSTEM_SPEC.md`** に集約されています。  
-コード提案・レビュー・エージェント作業の前に、必ず **`CONTEXTSYSTEM_SPEC.md`** を読んでください（本文はそちらに集約し、ここには二重に書きません）。
+Authoritative instruction file for this repository is `CONTEXTSYSTEM_SPEC.md` at the repository root.
 
-参考:
+Read it in full before any action in this repository. Do not proceed using only this file.
 
-- 本文（正）: `CONTEXTSYSTEM_SPEC.md`
-- 共通入口: `AGENTS.md`
-- 人間向け概要: `README.md`
+Required steps:
+
+1. Open `CONTEXTSYSTEM_SPEC.md` at the repository root.
+2. Follow every directive written there.
+3. If this file and `CONTEXTSYSTEM_SPEC.md` appear to conflict, `CONTEXTSYSTEM_SPEC.md` wins.
+
+This file contains no other instructions.

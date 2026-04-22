@@ -1,9 +1,15 @@
-# ContextSystem — Claude Code 入口
+# Agent Entrypoint (CLAUDE.md)
 
 @AGENTS.md
 
-## 注記
+Authoritative instruction file for this repository is `CONTEXTSYSTEM_SPEC.md`.
 
-- このリポジトリの仕様本文は `CONTEXTSYSTEM_SPEC.md` に集約されています（上の `@AGENTS.md` 経由で案内されます）。
-- Claude Code は `AGENTS.md` を自動では読まないため、このファイルに `@AGENTS.md` を import して同じ内容にアクセスさせています（出典: Anthropic 公式「How Claude remembers your project」）。
-- **まず `CONTEXTSYSTEM_SPEC.md` を開いて読んでから**作業してください。
+Read it in full before any action in this repository. Do not proceed using only this file.
+
+Required steps:
+
+1. Open `./CONTEXTSYSTEM_SPEC.md`.
+2. Follow every directive written there.
+3. If this file and `CONTEXTSYSTEM_SPEC.md` appear to conflict, `CONTEXTSYSTEM_SPEC.md` wins.
+
+This file contains no other instructions.

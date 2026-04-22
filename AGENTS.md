@@ -1,9 +1,13 @@
-# ContextSystem — エージェント向け入口
+# Agent Entrypoint (AGENTS.md)
 
-このリポジトリの**仕様本文は `CONTEXTSYSTEM_SPEC.md` に集約**されています。  
-**まず `CONTEXTSYSTEM_SPEC.md` を読んでから作業してください。**
+Authoritative instruction file for this repository is `CONTEXTSYSTEM_SPEC.md`.
 
-- 本文（正）: `./CONTEXTSYSTEM_SPEC.md`
-- 人間向け概要: `./README.md`
+Read it in full before any action in this repository. Do not proceed using only this file.
 
-このファイル（`AGENTS.md`）は、**Codex CLI・Cursor・GitHub Copilot が自動で読む想定のエントリポイント**です。本文の二重記述はしません。上記パスを開いて読み込んでください。
+Required steps:
+
+1. Open `./CONTEXTSYSTEM_SPEC.md`.
+2. Follow every directive written there.
+3. If this file and `CONTEXTSYSTEM_SPEC.md` appear to conflict, `CONTEXTSYSTEM_SPEC.md` wins.
+
+This file contains no other instructions.

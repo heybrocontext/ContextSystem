@@ -2,26 +2,31 @@
 
 このファイルが**仕様本文の唯一の正本**です。可否・手順・結果・スコープ一覧・更新規則は**すべてここ**にあります。他のファイル（`AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`）は、この本文に到達させるためのツール別エントリポイントで、**本文は持ちません**。
 
-## 1. エージェント別エントリポイント（自動読込される入口と、このリポジトリの置きファイル）
+## 1. エージェント別エントリポイント（いつ・どの確度で読まれるか）
 
-各 AI エージェントの「リポジトリをクローンした直後に何を読みに行くか」は公式仕様で異なるため、**各仕様に合わせたエントリポイントを用意**し、**どれもこの `CONTEXTSYSTEM_SPEC.md` に誘導する薄いリダイレクト**として置いている。
+各 AI エージェントの自動読込仕様は公式ドキュメントで異なる。下表は**本リポジトリに置いた3つの入口ファイル**（`AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`）が**どのエージェントで・いつ・どれくらい確実に読まれるか**を、公式ドキュメントに基づいて整理したもの。どの経路から来ても**最終的に本ファイル（`CONTEXTSYSTEM_SPEC.md`）を必ず開く**ように、各入口ファイルはその指示だけを含む。
 
-| エージェント | 自動読込の対象（公式仕様） | 本リポジトリでの対応 | 動作 |
-|--------------|-----------------------------|----------------------|------|
-| **OpenAI Codex CLI** | ルートの `AGENTS.md`（`AGENTS.override.md` を優先し、親→子方向で連結。32 KiB 上限）[^codex] | `./AGENTS.md` を配置 | クローン直後に `AGENTS.md` を自動読込 → 本ファイルを開く指示に従う |
-| **Cursor**（Agent / Chat） | ルート・サブディレクトリの `AGENTS.md`（`.cursor/rules` の代替として扱う）[^cursor] | 同上（同じ `./AGENTS.md`） | 同上 |
-| **GitHub Copilot**（コーディングエージェント / コードレビュー） | `.github/copilot-instructions.md`（リポジトリ全体）および `AGENTS.md` / `CLAUDE.md` / `GEMINI.md`[^copilot] | `./.github/copilot-instructions.md` と `./AGENTS.md` を配置 | いずれの経路でも本ファイルを読む指示に到達 |
-| **Claude Code** | `./CLAUDE.md`（または `./.claude/CLAUDE.md`）。**`AGENTS.md` は自動では読まない**。推奨は `CLAUDE.md` 内で `@AGENTS.md` と import[^claude] | `./CLAUDE.md` を配置し `@AGENTS.md` を import | セッション開始時に `CLAUDE.md` → `AGENTS.md` → 本ファイル、の順に到達 |
+| エージェント / 実行形態 | 読まれる入口ファイル | いつ読まれるか | 確度（公式仕様） | 出典 |
+|--------------------------|----------------------|----------------|------------------|------|
+| **OpenAI Codex**（CLI / TUI / `codex exec`） | `./AGENTS.md`（`AGENTS.override.md` があればそちらが優先） | セッション開始時（1 run につき 1 回、TUI は起動ごと）。プロジェクトルート→CWD を走査して連結。合計 32 KiB を超えた分は打ち切り | **ルート `AGENTS.md` の非空ファイルは必ず読込**（空・巨大すぎて打ち切り時を除く） | [^codex] |
+| **Cursor**（Agent / Chat、ルートの `AGENTS.md`） | `./AGENTS.md` | Agent / Chat のセッション開始時にモデルコンテキスト先頭へ挿入。サブディレクトリ内で作業するとネスト `AGENTS.md` が優先 | **`.cursor/rules` の代替として読込**。Cursor Tab とインライン編集（Cmd/Ctrl+K）には適用されない | [^cursor] |
+| **GitHub Copilot コーディングエージェント**（GitHub.com / VS Code / JetBrains / Xcode / Eclipse） | `.github/copilot-instructions.md`＋`./AGENTS.md`（＋`CLAUDE.md` も可） | エージェント実行ごとに対象リポジトリの指示を読込。ディレクトリツリーで最も近い `AGENTS.md` が優先 | **リポジトリ全体指示と Agent 指示の両方に対応** | [^copilot-support][^copilot-repo] |
+| **GitHub Copilot コードレビュー** | `.github/copilot-instructions.md` のみ | PR レビュー時。ベースブランチ側の指示を使用 | `AGENTS.md` / `CLAUDE.md` は**使わない**（`.github/copilot-instructions.md` と `.github/instructions/**` のみ） | [^copilot-support] |
+| **GitHub Copilot Chat（IDE）** | `.github/copilot-instructions.md`（全 IDE）／`AGENTS.md`（VS Code のみ） | Chat 送信時に自動付与 | VS Code では Agent 指示も読込。Visual Studio / JetBrains / Xcode / Eclipse の Chat は `AGENTS.md` 非対応 | [^copilot-support] |
+| **GitHub Copilot CLI** | `.github/copilot-instructions.md`＋`./AGENTS.md` | CLI 実行ごと | 両方対応 | [^copilot-support] |
+| **Claude Code**（CLI / IDE 拡張） | `./CLAUDE.md`（または `./.claude/CLAUDE.md`）。本リポジトリでは `CLAUDE.md` 内で `@AGENTS.md` を import | セッション開始時に作業ディレクトリから上方向へ走査して全 `CLAUDE.md` を**フル読込**（`CLAUDE.local.md` も追記） | **`AGENTS.md` は自動では読まない**。`@AGENTS.md` import 経由でのみ到達 | [^claude] |
 
 [^codex]: OpenAI Codex「Custom instructions with AGENTS.md」https://developers.openai.com/codex/guides/agents-md/
-[^cursor]: Cursor Docs「Rules — AGENTS.md」https://cursor.com/docs/context/rules
-[^copilot]: GitHub Docs「Adding repository custom instructions for GitHub Copilot」https://docs.github.com/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions
-[^claude]: Anthropic「How Claude remembers your project（CLAUDE.md / AGENTS.md）」https://docs.anthropic.com/en/docs/claude-code/memory
+[^cursor]: Cursor Docs「Rules — AGENTS.md / FAQ」https://cursor.com/docs/context/rules
+[^copilot-support]: GitHub Docs「Support for different types of custom instructions」https://docs.github.com/en/copilot/reference/custom-instructions-support
+[^copilot-repo]: GitHub Docs「Adding repository custom instructions for GitHub Copilot」https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions
+[^claude]: Anthropic「How Claude remembers your project」https://docs.anthropic.com/en/docs/claude-code/memory
 
-**注意点（共通）**
+**共通前提（すべてのエージェント）**
 
-- どのツールの「自動読込」も**完全保証ではない**（UI・バックグラウンドエージェント・設定次第で読まれない例が報告されている）。確実性を上げるため、**新規セッションでは `CONTEXTSYSTEM_SPEC.md` を明示的に参照させる**（開く／添付／プロンプトでパスを指定）ことを推奨する。
-- 仕様変更でどれかの入口名が無効化されても、**本ファイルが正本**である事実は変えない。**入口ファイルの追加・置き換え**で追随する。
+- 自動読込は「**入口ファイルの内容**」しか保証しない。本ファイル（`CONTEXTSYSTEM_SPEC.md`）は自動では読まれないため、入口ファイルに「本ファイルを必ず開く」指示を書くことで**強制的に**本ファイルへ合流させる構造にしている。
+- 入口ファイルに本文・別ルールを書き足さない（合流させるための指示だけに保つ）。
+- 公式仕様の変更に追随する場合は、**入口ファイルを差し替える**だけでよい（本文はこの1ファイルのまま）。
 
 ## 2. エージェントが最初に行う手順
 
